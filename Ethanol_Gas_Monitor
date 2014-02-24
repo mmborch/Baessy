@@ -1,0 +1,167 @@
+/*
+########################################################
+
+Arduino code to monitor Ethanol & Vinegar fermentations using seed-studio gassensors
+& arduino uno + Ethernet shield.
+
+GOAL:
+- Online monitoring -> tweet when fermentation is done
+- store data to online database or SD card on ethernet shields
+- -> data analysis with R / Excel ect
+
+LABITAT IP
+Labitat IP - byte ip[]    = { 10, 42,   1,  19 }; 
+Must be unique on local network
+
+Ethernet shield mac adress:
+byte mac[]     = { 0x90, 0xA2, 0xDA, 0x0F, 0x15, 0x80 } 
+Is unique for the Ethernet shield see the
+
+
+THINK SPEAK ACCOUNT:
+user Biologigaragen
+password igemigem
+User account: API: 3V63M4YYZMWBUS41 
+
+COMPILED FROM THE FOLLOWING EXAMPLES:
+- Thingspeak example: https://github.com/iobridge/ThingSpeak-Arduino-Examples/blob/master/Ethernet/Arduino_to_ThingSpeak.ino
+- Running average arduino: http://playground.arduino.cc/Main/RunningAverage#.Uwu51vl5MWk
+
+#########################################################
+*/
+
+
+
+// Including Libraries
+#include <SPI.h>
+#include <Ethernet.h>
+
+// Local Network Settings
+byte mac[] = { 0x90, 0xA2, 0xDA, 0x0F, 0x15, 0x80 }; // Must be unique on local network
+
+// ThingSpeak Settings
+char thingSpeakAddress[] = "api.thingspeak.com";
+String writeAPIKey = "3V63M4YYZMWBUS41";
+const int updateThingSpeakInterval = 60*60*12 * 1000;      // Time interval in milliseconds to update ThingSpeak (number of seconds * 1000 = interval)
+
+// Variable Setup
+long lastConnectionTime = 0; 
+boolean lastConnected = false;
+int failedCounter = 0;
+
+// Initialize Arduino Ethernet Client
+EthernetClient client;
+
+
+// SET UP
+void setup()
+{
+  // Start Serial for debugging on the Serial Monitor
+  Serial.begin(9600);
+  
+  // Start Ethernet on Arduino
+  startEthernet();
+}
+
+// THE ARDUINO LOOP
+void loop()
+{
+  // Read value from Analog Input Pin 0
+  String analogPin0 = String(analogRead(A0), DEC);
+  
+  // Print Update Response to Serial Monitor
+  if (client.available())
+  {
+    char c = client.read();
+    Serial.print(c);
+  }
+
+  // Disconnect from ThingSpeak
+  if (!client.connected() && lastConnected)
+  {
+    Serial.println("...disconnected");
+    Serial.println();
+    
+    client.stop();
+  }
+  
+  // Update ThingSpeak
+  if(!client.connected() && (millis() - lastConnectionTime > updateThingSpeakInterval))
+  {
+    updateThingSpeak("field1="+analogPin0);
+  }
+  
+  // Check if Arduino Ethernet needs to be restarted
+  if (failedCounter > 3 ) {startEthernet();}
+  
+  lastConnected = client.connected();
+}
+
+void updateThingSpeak(String tsData)
+{
+  if (client.connect(thingSpeakAddress, 80))
+  {         
+    client.print("POST /update HTTP/1.1\n");
+    client.print("Host: api.thingspeak.com\n");
+    client.print("Connection: close\n");
+    client.print("X-THINGSPEAKAPIKEY: "+writeAPIKey+"\n");
+    client.print("Content-Type: application/x-www-form-urlencoded\n");
+    client.print("Content-Length: ");
+    client.print(tsData.length());
+    client.print("\n\n");
+
+    client.print(tsData);
+    
+    lastConnectionTime = millis();
+    
+    if (client.connected())
+    {
+      Serial.println("Connecting to ThingSpeak...");
+      Serial.println();
+      
+      failedCounter = 0;
+    }
+    else
+    {
+      failedCounter++;
+  
+      Serial.println("Connection to ThingSpeak failed ("+String(failedCounter, DEC)+")");   
+      Serial.println();
+    }
+    
+  }
+  else
+  {
+    failedCounter++;
+    
+    Serial.println("Connection to ThingSpeak Failed ("+String(failedCounter, DEC)+")");   
+    Serial.println();
+    
+    lastConnectionTime = millis(); 
+  }
+}
+
+void startEthernet()
+{
+  
+  client.stop();
+
+  Serial.println("Connecting Arduino to network...");
+  Serial.println();  
+
+  delay(1000);
+  
+  // Connect to network amd obtain an IP address using DHCP
+  if (Ethernet.begin(mac) == 0)
+  {
+    Serial.println("DHCP Failed, reset Arduino to try again");
+    Serial.println();
+  }
+  else
+  {
+    Serial.println("Arduino connected to network using DHCP");
+    Serial.println();
+  }
+  
+  delay(1000);
+}
