@@ -14,8 +14,8 @@ Labitat IP - byte ip[]    = { 10, 42,   1,  19 };
 Must be unique on local network
 
 Ethernet shield mac adress:
+Is unique for the Ethernet shield see each individual board.
 byte mac[]     = { 0x90, 0xA2, 0xDA, 0x0F, 0x15, 0x80 } 
-Is unique for the Ethernet shield see the
 
 
 THINK SPEAK ACCOUNT:
