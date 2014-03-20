@@ -9,9 +9,9 @@ GOAL:
 - store data to online database or SD card on ethernet shields
 - -> data analysis with R / Excel ect
 
-LABITAT IP
-Labitat IP - byte ip[]    = { 10, 42,   1,  19 }; 
-Must be unique on local network
+LABITAT IP - Must be unique on local network
+byte ip[]    = { 10, 42,   1,  19 }; 
+
 
 Ethernet shield mac adress:
 Is unique for the Ethernet shield see each individual board.
@@ -38,11 +38,12 @@ COMPILED FROM THE FOLLOWING EXAMPLES:
 
 // Local Network Settings
 byte mac[] = { 0x90, 0xA2, 0xDA, 0x0F, 0x15, 0x80 }; // Must be unique on local network
+byte ip[]    = { 10, 42,   1,  19 };  // Must be unique on local network
 
 // ThingSpeak Settings
 char thingSpeakAddress[] = "api.thingspeak.com";
 String writeAPIKey = "3V63M4YYZMWBUS41";
-const int updateThingSpeakInterval = 60*60*6*1000;      // Time interval in milliseconds to update ThingSpeak (number of seconds * 1000 = interval)
+const int updateThingSpeakInterval = 16*1000;      // Time interval in milliseconds to update ThingSpeak (number of seconds * 1000 = interval)
 
 // Variable Setup
 long lastConnectionTime = 0; 
